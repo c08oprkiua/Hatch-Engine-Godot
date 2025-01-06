@@ -1,0 +1,15 @@
+
+#!/usr/bin/env python
+from misc.utility.scons_hints import *
+
+Import("env")
+Import("env_modules")
+
+env_hatch = env_modules.Clone()
+
+hatch_sources = [
+    "register_types.cpp",
+    "fileaccess_hatch.cpp"
+]
+
+env_hatch.add_source_files(env.modules_sources, hatch_sources)
