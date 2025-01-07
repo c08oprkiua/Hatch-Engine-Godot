@@ -229,8 +229,6 @@ uint16_t HatchArchiveReader::get_file_count(){
 }
 
 void HatchArchiveReader::_bind_methods(){
-	//ClassDB::bind_method(D_METHOD("crc32_string", "str"), &HatchArchiveReader::crc32_string);
-	//ClassDB::bind_method(D_METHOD("crc_32_encrypt_data", "data", "size", "crc"), &HatchArchiveReader::crc_32_encrypt_data);
 	ClassDB::bind_static_method("HatchArchiveReader", D_METHOD("crc_32_encrypt_data", "data", "size", "crc"), &HatchArchiveReader::p_crc_32_encrypt_data);
 	ClassDB::bind_static_method("HatchArchiveReader", D_METHOD("crc32_string", "str"), &HatchArchiveReader::crc32_string);
 
