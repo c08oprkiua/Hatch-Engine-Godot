@@ -6,6 +6,8 @@
 
 #include "core/templates/hash_map.h"
 
+#define HATCH_CRC_MAGIC_VALUE 0xFFFFFFFFU
+
 typedef struct ResourceRegistryItem {
 	PackedByteArray table;
 	uint64_t offset;
@@ -14,24 +16,30 @@ typedef struct ResourceRegistryItem {
 	uint64_t compressed_size;
 } ResourceRegistryItem;
 
-class FileAccessHatch : public RefCounted {
-	GDCLASS(FileAccessHatch, RefCounted);
+//HatchArchive reader is what is exposed to scripting for interacting with a Hatch archive manually.
+//FileAccessHatch and PackSourceHatch are internal classes that the engine can use to directly
+//treat a Hatch archive like a Godot archive, ie. with direct FileAccess access. This will be used
+//for directly running the engine in "Hatch mode" without any Godot pck when the port is complete.
+
+class HatchArchiveReader : public RefCounted {
+	GDCLASS(HatchArchiveReader, RefCounted);
 
 	HashMap<uint32_t, ResourceRegistryItem> resource_registry;
 	PackedInt32Array crc_array;
 
-	Ref<FileAccess> file;
-
 	uint16_t file_count;
+
+	Ref<FileAccess> file;
 
 protected:
 	static void _bind_methods();
 
 public:
     uint16_t get_file_count();
-    void set_file_count(uint16_t new_file_count);
 
-	uint32_t crc32_string(String string);
+	static uint32_t p_crc_32_encrypt_data(PackedByteArray data, int size, uint32_t crc); //script API friendly
+	static uint32_t crc_32_encrypt_data(const void* data, size_t size, uint32_t crc = HATCH_CRC_MAGIC_VALUE);
+ 	static uint32_t crc32_string(String string);
 
 	void open(String file_path);
 
@@ -47,7 +55,16 @@ public:
 //new implementation based on how Godot manages its own loading of pck archives.
 //The goal here is to make it as seamless as doing this with Godot's own systems.
 
-class NewFileAccessHatch : public FileAccess {
+class FileAccessHatch : public FileAccess {
+	uint32_t path_hash;
+	Ref<FileAccess> file;
+	PackedData::PackedFile file_info;
+	mutable uint64_t position;
+	mutable int swapNibbles = 0;
+	mutable int indexKeyA = 0;
+	mutable int indexKeyB = 8;
+	mutable int xorValue;
+
 	virtual Error open_internal(const String &p_path, int p_mode_flags) override;
 	virtual uint64_t _get_modified_time(const String &p_file) override { return 0; }
 	virtual BitField<FileAccess::UnixPermissionFlags> _get_unix_permissions(const String &p_file) override { return 0; }
@@ -82,7 +99,7 @@ public:
 
 	virtual void close() override;
 
-	NewFileAccessHatch(const String &p_path, const PackedData::PackedFile &p_file);
+	FileAccessHatch(const String &p_path, const PackedData::PackedFile &p_file);
 };
 
 class PackSourceHatch : public PackSource {
