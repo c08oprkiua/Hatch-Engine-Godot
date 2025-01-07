@@ -4,14 +4,14 @@
 #include "fileaccess_hatch.h"
 
 void register_hatch_types(){
-	ClassDB::register_class<FileAccessHatch>();
+	ClassDB::register_class<HatchArchiveReader>();
 }
 
 void unregister_hatch_types(){}
 
 void initialize_hatch_module(ModuleInitializationLevel p_level){
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
-		GDREGISTER_CLASS(FileAccessHatch);
+		GDREGISTER_CLASS(HatchArchiveReader);
 	}
 }
 
