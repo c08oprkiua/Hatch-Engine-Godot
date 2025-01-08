@@ -1,59 +1,16 @@
-#ifndef FILEACCESS_HATCH_H
-#define FILEACCESS_HATCH_H
+#ifndef HATCH_PACK_SUPPORT_H
+#define HATCH_PACK_SUPPORT_H
 
-#include "core/io/file_access.h"
+/*
+ The code contained in this and its paired cpp file was an attempt to make .hatch archives natively
+ supported by Godot engine so that the engine can treat a Hatch archive like a Godot archive, ie.
+ with direct FileAccess access and all the other benefits. Plans for this fell through due to a
+ limitation in how Godot handles pack sources. This code is kept for future reference, and possibly
+ in case this limitation is ever removed in Godot.
+ */
+
+#include "hatch_archive_reader.h"
 #include "core/io/file_access_pack.h"
-
-#include "core/templates/hash_map.h"
-
-#define HATCH_CRC_MAGIC_VALUE 0xFFFFFFFFU
-
-typedef struct ResourceRegistryItem {
-	PackedByteArray table;
-	uint64_t offset;
-	uint64_t size;
-	uint32_t data_flag;
-	uint64_t compressed_size;
-} ResourceRegistryItem;
-
-//HatchArchive reader is what is exposed to scripting for interacting with a Hatch archive manually.
-//FileAccessHatch and PackSourceHatch are internal classes that the engine can use to directly
-//treat a Hatch archive like a Godot archive, ie. with direct FileAccess access. This will be used
-//for directly running the engine in "Hatch mode" without any Godot pck when the port is complete.
-
-class HatchArchiveReader : public RefCounted {
-	GDCLASS(HatchArchiveReader, RefCounted);
-
-	HashMap<uint32_t, ResourceRegistryItem> resource_registry;
-	PackedInt32Array crc_array;
-
-	uint16_t file_count;
-
-	Ref<FileAccess> file;
-
-protected:
-	static void _bind_methods();
-
-public:
-    uint16_t get_file_count();
-
-	static uint32_t p_crc_32_encrypt_data(PackedByteArray data, int size, uint32_t crc); //script API friendly
-	static uint32_t crc_32_encrypt_data(const void* data, size_t size, uint32_t crc = HATCH_CRC_MAGIC_VALUE);
- 	static uint32_t crc32_string(String string);
-
-	void open(String file_path);
-
-	void load(String path);
-
-	PackedByteArray load_resource(String filename);
-	PackedByteArray load_resource_hash(uint32_t hash);
-
-	Dictionary get_file_information(int index);
-	Dictionary get_file_information_hash(uint32_t hash);
-};
-
-//new implementation based on how Godot manages its own loading of pck archives.
-//The goal here is to make it as seamless as doing this with Godot's own systems.
 
 class FileAccessHatch : public FileAccess {
 	uint32_t path_hash;
@@ -103,9 +60,25 @@ public:
 };
 
 class PackSourceHatch : public PackSource {
+	static PackSourceHatch *singleton;
+
+	struct MD5Path { //just a copy of PathMD5 that isn't private to this
+		uint64_t a;
+		uint64_t b;
+		explicit MD5Path(const Vector<uint8_t> &p_buf) {
+			a = *((uint64_t *)&p_buf[0]);
+			b = *((uint64_t *)&p_buf[8]);
+		}
+	};
+
+	HashMap<MD5Path, uint32_t> md5_crc32_map;
+
 public:
+	static PackSourceHatch *get_singleton();
+
 	virtual bool try_open_pack(const String &p_path, bool p_replace_files, uint64_t p_offset) override;
 	virtual Ref<FileAccess> get_file(const String &p_path, PackedData::PackedFile *p_file) override;
 };
+
 
 #endif
