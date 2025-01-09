@@ -2,6 +2,7 @@
 #include "core/object/class_db.h"
 
 #include "file_io/hatch_archive_reader.h"
+#include "hsl/hsl_bytecode_reader.h"
 
 void register_hatch_types(){
 	ClassDB::register_class<HatchArchiveReader>();
@@ -16,6 +17,7 @@ void initialize_hatch_module(ModuleInitializationLevel p_level){
 
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
 		GDREGISTER_CLASS(HatchArchiveReader);
+		GDREGISTER_CLASS(HSLBytecodeReader);
 	}
 }
 
