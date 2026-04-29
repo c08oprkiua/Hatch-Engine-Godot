@@ -1,3 +1,7 @@
+# NOTICE: DEPRECIATED
+This project is more or less depreciated. If you want something for interfacing with Hatch Engine formats, I suggest looking at my other project [libHatchFormats](https://github.com/c08oprkiua/libHatchFormats).
+
+
 # Hatch-Engine-Godot
 An engine module that aims to add full support for HatchGameEngine to Godot 4.
 
